@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-sleep infinity
 echo "y" | ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
 cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 echo " " > /etc/nginx/conf.d/default.conf
