@@ -31,7 +31,6 @@ docker service create --replicas 2 --name servidor_web -l 'ingress=yes' -l 'doma
 Service web with Nginx.
 ```
 docker service create --replicas 2 --name servidor_web_nginx -l 'ingress=yes' -l 'domain=nginx-test.com' -l 'port_app=80' --network internal nginx
-
 ```
 
 For to finish, we deploy the service nginx ingress and we indicating the next parameters:
