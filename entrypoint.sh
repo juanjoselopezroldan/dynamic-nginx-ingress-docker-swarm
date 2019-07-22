@@ -1,10 +1,12 @@
 #!/bin/bash
 #set -x
+#Generate the key for to connect with the cluster of docker
 echo "y" | ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
 cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 finish="1"
 check="True"
 
+#Function for to generate the file of configuration of the services of cluster of docker doing request to the API of docker (through of ssh) and get the information with the command inspect and check the labels of services
 configuration_nginx () {
 services=$(docker -H ssh://$1@$2 service ls --format "{{.Name}}" | grep -v $3)
 number_services=$(echo "$services" | wc -l)
@@ -14,6 +16,7 @@ do
         service_details=$(docker -H ssh://$USER_ACCESS_SSH@$ip service inspect $service)
         ingress=$(echo $service_details | jq -r '.[].Spec.Labels.ingress'|  awk '{print tolower($0)}')
         echo " / Name service: $service"
+        #If the service is not have the label ingress in yes, it not add the service to nginx
         if [[ $ingress == "yes" ]]; then
                 ip_service=$(echo $service_details | jq -r '.[].Endpoint.VirtualIPs[].Addr' | cut -d "/" -f 1)
                 domain=$(echo $service_details | jq -r '.[].Spec.Labels.domain')
@@ -45,19 +48,23 @@ EOF
 done
 }
 
+#It go over the direcctions ips indicated in the enviroment variable in the creation of service of nginx
 for ip in $IP_NODES
 do
+        #Check connection with the nodes of docker and if connect successfully, to execute the funcion declarated previously
         echo "Checking connection with the direction $ip"
-        echo "yes" | ssh -o "StrictHostKeyChecking no" -o "PasswordAuthentication=no" $USER_ACCESS_SSH@$ip -i /root/.ssh/id_rsa exit
+        echo "yes" | ssh -ño "StrictHostKeyChecking no" -o "PasswordAuthentication=no" $USER_ACCESS_SSH@$ip -i /root/.ssh/id_rsa exit
         check=$(echo $?)
         if [[ $check == "0" && $finish == "1" ]] ;
         then
                 echo "Connection successfully 😀"
                 echo "Generating file of configuration for nginx"
                 configuration_nginx $USER_ACCESS_SSH $ip $NAME_SERVICE
+                #when to finis the configuration of nginx, check that the configuration is correct and start the service of nginx
                 nginx -t
                 echo "Starting service of nginx"
                 nginx -g "daemon off;" &
+                #When already is in execution the service of nginx, every 60 seconds to check if there is new services deployed
                 while [[ $check ]]; do
                         check_services=$(docker -H ssh://$USER_ACCESS_SSH@$ip service ls --format "{{.Name}}" | grep -v $NAME_SERVICE | wc -l)
                         if [[ "$check_services" != "$number_services" ]]; then
@@ -68,6 +75,7 @@ do
                         fi
                         sleep 60
                 done
+                #When already finished the script, it delete the line of public key in the file of authorized_keys
                 export KEY_NO_VALID=$(grep "$(cat /root/.ssh/id_rsa.pub)" -v /root/.ssh/authorized_keys) | echo $KEY_NO_VALID > /root/.ssh/authorized_keys
                 finish="0"
         else
