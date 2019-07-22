@@ -13,7 +13,6 @@ for service in $services
 do
         service_details=$(docker -H ssh://$USER_ACCESS_SSH@$ip service inspect $service)
         ingress=$(echo $service_details | jq -r '.[].Spec.Labels.ingress'|  awk '{print tolower($0)}')
-        echo $ingress
         echo " / Name service: $service"
         if [[ $ingress == "yes" ]]; then
                 ip_service=$(echo $service_details | jq -r '.[].Endpoint.VirtualIPs[].Addr' | cut -d "/" -f 1)
