@@ -57,7 +57,7 @@ while [[ $check ]]; do
         if [[ "$check_services" != "$number_services" ]]; then
                 echo "Exist changes in the services, generating new file of configuration..."
                 configuration_nginx $NAME_SERVICE
-                echo "Restarting configuration of nginx"
+                echo "Restarting configuration of nginx 😀"
                 nginx -s reload
         fi
         sleep 60
