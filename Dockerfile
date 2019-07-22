@@ -1,18 +1,14 @@
 FROM nginx:1.17.1
 
-ENV IP_NODES="10.40.10.71 10.40.10.72" \
-	USER_ACCESS_SSH="root" \
-	NAME_SERVICE="nginx_ingress"
+ENV NAME_SERVICE="nginx_ingress"
 
 ARG VERSION_DOCKER=18.09.7
-ARG DIRECTORY_SSH_NODE=/root/.ssh
 
 RUN apt update \
 	&& apt install -y \
 	jq \
 	nano \
 	wget \
-	ssh \
 	&& mkdir -p /entrypoint
 
 ADD entrypoint.sh /entrypoint/entrypoint.sh
@@ -25,5 +21,5 @@ RUN cd /tmp \
 	&& chmod +x /entrypoint/entrypoint.sh
 
 
-VOLUME $DIRECTORY_SSH_NODE/authorized_keys /root/.ssh/authorized_keys
+VOLUME /var/run/docker.sock /var/run/docker.sock
 CMD ["/bin/bash", "/entrypoint/entrypoint.sh"]
